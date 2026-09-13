@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Work Notifications</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #E9EBE4;
+    --paper-line: #CBD3C6;
+    --margin: #A5332A;
+    --ink: #1E2A38;
+    --ink-soft: #4A5666;
+    --amber: #C98A1B;
+    --amber-bg: rgba(201,138,27,0.14);
+    --amber-text: #8C6013;
+    --green: #4C7A5E;
+    --green-bg: rgba(76,122,94,0.14);
+    --red-bg: rgba(165,51,42,0.12);
+  }
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    background: var(--paper);
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0px, transparent 35px,
+      var(--paper-line) 35px, var(--paper-line) 36px
+    );
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    color: var(--ink);
+  }
+  body{
+    display:flex; justify-content:center;
+    padding: 48px 16px 80px;
+  }
+  .sheet{
+    width:100%; max-width: 640px;
+    position:relative;
+    padding-left: 28px;
+  }
+  .sheet::before{
+    content:"";
+    position:absolute; top:-16px; bottom:-16px; left:0;
+    width:2px; background: var(--margin);
+    opacity:0.55;
+  }
+  header{ margin-bottom: 28px; }
+  h1{
+    font-family:'Kanit',sans-serif;
+    font-weight:700; font-size: 30px;
+    margin: 0 0 4px;
+    letter-spacing: 0.2px;
+  }
+  .tagline{
+    margin:0; color: var(--ink-soft); font-size:14px;
+  }
+  .notify-row{
+    margin-top:14px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+  .notify-btn{
+    font-family:inherit; font-size:13px; font-weight:500;
+    background:transparent; color: var(--ink);
+    border:1px solid var(--ink); border-radius:3px;
+    padding:6px 12px; cursor:pointer;
+  }
+  .notify-btn:hover{ background: var(--ink); color: var(--paper); }
+  .notify-status{ font-size:13px; color: var(--ink-soft); }
+  .tab-note{
+    margin-top:8px; font-size:12.5px; color: var(--ink-soft); font-style: italic;
+  }
+  .ntfy-box{
+    margin-top:16px; padding:14px 16px; background: rgba(76,122,94,0.08);
+    border:1px solid rgba(76,122,94,0.3); border-radius:6px;
+  }
+  .ntfy-box label{ font-size:13px; font-weight:600; color: var(--ink); }
+  .ntfy-row{ display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  .ntfy-row input{
+    flex:1; min-width:160px; font-family:inherit; font-size:14px; color: var(--ink);
+    background: var(--paper); border:1px solid var(--ink-soft); border-radius:4px;
+    padding:6px 10px; outline:none;
+  }
+  .ntfy-row input:focus{ border-color: var(--ink); border-width:2px; }
+  .ntfy-help{
+    margin:10px 0 0; font-size:12.5px; color: var(--ink-soft); line-height:1.6;
+  }
+  .ntfy-help a{ color: var(--green); }
+  .ntfy-status{ margin:8px 0 0; font-size:13px; font-weight:500; }
+  .ntfy-status.ok{ color: var(--green); }
+  .ntfy-status.warn{ color: var(--margin); }
+
+  form.add-task{
+    padding: 18px 0 22px;
+    border-bottom: 1px solid var(--paper-line);
+    margin-bottom: 6px;
+  }
+  .field-row{
+    display:flex; gap: 18px; flex-wrap: wrap; margin-bottom: 14px;
+  }
+  .field{
+    display:flex; flex-direction:column; flex:1; min-width: 150px;
+  }
+  .field label{
+    font-size:12.5px; color: var(--ink-soft); margin-bottom: 4px;
+  }
+  .field input{
+    font-family: inherit; font-size:15px; color: var(--ink);
+    background: transparent; border:none; border-bottom: 1.5px solid var(--ink-soft);
+    padding: 4px 2px; outline:none;
+  }
+  .field input:focus{ border-bottom-color: var(--ink); border-bottom-width:2px; }
+  .field input::placeholder{ color: #9AA3AC; }
+  .form-footer{ display:flex; justify-content:space-between; align-items:center; }
+  .form-hint{ font-size:13px; color: var(--margin); min-height: 18px; }
+  .add-btn{
+    font-family:'Kanit',sans-serif; font-weight:600; font-size:15px;
+    background: var(--ink); color: var(--paper);
+    border:none; border-radius:4px; padding:9px 18px; cursor:pointer;
+    white-space:nowrap;
+  }
+  .add-btn:hover{ background:#0F1822; }
+  .add-btn:focus-visible, .notify-btn:focus-visible, input:focus-visible, .check:focus-visible, .del:focus-visible{
+    outline: 2px solid var(--margin); outline-offset:2px;
+  }
+
+  ul.task-list{ list-style:none; margin:0; padding:0; }
+  li.task-row{
+    display:flex; align-items:flex-start; gap:12px;
+    padding: 16px 0; border-bottom: 1px solid var(--paper-line);
+  }
+  li.task-row.done{ opacity:0.55; }
+  .check{
+    flex:0 0 auto; width:20px; height:20px; margin-top:2px;
+    border:1.5px solid var(--ink-soft); border-radius:4px;
+    background:transparent; cursor:pointer; padding:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .check svg{ width:13px; height:13px; display:none; }
+  li.task-row.done .check{ background: var(--green); border-color: var(--green); }
+  li.task-row.done .check svg{ display:block; }
+  .task-main{ flex:1; min-width:0; }
+  .task-line1{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .subject-badge{
+    font-size:12px; font-weight:600; color: var(--amber-text);
+    background: var(--amber-bg); border:1px solid rgba(201,138,27,0.35);
+    border-radius:3px; padding:2px 8px; white-space:nowrap;
+  }
+  .task-title{ font-size:16px; font-weight:500; }
+  li.task-row.done .task-title{ text-decoration: line-through; }
+  .task-line2{ margin-top:6px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .due-text{ font-size:13px; color: var(--ink-soft); }
+  .countdown-badge{
+    font-size:12px; font-weight:600; border-radius:3px; padding:2px 8px;
+  }
+  .countdown-badge.safe{ background: var(--green-bg); color: var(--green); }
+  .countdown-badge.soon{ background: var(--amber-bg); color: var(--amber-text); }
+  .countdown-badge.urgent{ background: var(--red-bg); color: var(--margin); }
+  .countdown-badge.finished{ background: var(--green-bg); color: var(--green); }
+  .del{
+    flex:0 0 auto; background:transparent; border:none; cursor:pointer;
+    color: var(--ink-soft); padding:4px; margin-top:-2px;
+  }
+  .del:hover{ color: var(--margin); }
+  .del svg{ width:16px; height:16px; }
+
+  .empty-state{
+    padding: 40px 0; color: var(--ink-soft); font-size:15px; text-align:left;
+  }
+  .empty-state strong{ display:block; color: var(--ink); font-size:17px; margin-bottom:4px; font-family:'Kanit',sans-serif; }
+
+  #toast-wrap{
+    position:fixed; bottom:20px; right:20px; display:flex; flex-direction:column; gap:10px; z-index:50;
+  }
+  .toast{
+    background: var(--ink); color: var(--paper);
+    border-radius:6px; padding:12px 16px; max-width:280px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    font-size:14px; animation: slidein 0.25s ease-out;
+  }
+  .toast b{ font-family:'Kanit',sans-serif; display:block; margin-bottom:2px; font-size:14px; }
+  @media (prefers-reduced-motion: reduce){
+    .toast{ animation:none; }
+  }
+  @keyframes slidein{ from{ transform: translateY(12px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+
+  @media (max-width: 480px){
+    h1{ font-size:24px; }
+    .field-row{ gap:12px; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <header>
+    <h1>Home Work Notifications</h1>
+    <p class="tagline">บันทึกการบ้านและเวลาที่ต้องทำ ให้แอปเตือนเมื่อถึงเวลา</p>
+    <div class="notify-row">
+      <button class="notify-btn" id="notifyBtn" type="button">เปิดการแจ้งเตือนของเบราว์เซอร์</button>
+      <span class="notify-status" id="notifyStatus"></span>
+    </div>
+    <p class="tab-note">แจ้งเตือนหลักส่งผ่านแอป ntfy จึงเด้งขึ้นมาได้แม้ปิดแอปนี้หรือล็อกหน้าจออยู่</p>
+
+    <div class="ntfy-box">
+      <label for="ntfyTopicInput">หัวข้อ ntfy ของคุณ (ตั้งครั้งเดียว)</label>
+      <div class="ntfy-row">
+        <input id="ntfyTopicInput" type="text" placeholder="เช่น kanya-hw-8271" maxlength="60">
+        <button class="notify-btn" id="ntfySaveBtn" type="button">บันทึก</button>
+      </div>
+      <p class="ntfy-help" id="ntfyHelp">
+        1) ติดตั้งแอป <a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" rel="noopener">ntfy จาก Play Store</a> (ฟรี)
+        2) เปิดแอป กด + แล้วตั้งชื่อหัวข้อลับๆ ของตัวเอง (ห้ามใช้ชื่อซ้ำกับคนอื่น เพราะใครรู้ชื่อหัวข้อจะเห็นข้อความได้)
+        3) พิมพ์ชื่อหัวข้อเดียวกันในช่องด้านบนแล้วกดบันทึก — ต้องทำใหม่ทุกครั้งที่รีเฟรชหน้านี้
+      </p>
+      <p class="ntfy-status" id="ntfyStatus"></p>
+    </div>
+  </header>
+
+  <form class="add-task" id="addForm">
+    <div class="field-row">
+      <div class="field">
+        <label for="subjectInput">วิชา</label>
+        <input id="subjectInput" type="text" placeholder="เช่น คณิตศาสตร์" maxlength="40">
+      </div>
+      <div class="field" style="flex:2;">
+        <label for="titleInput">งานที่ต้องทำ</label>
+        <input id="titleInput" type="text" placeholder="เช่น ทำแบบฝึกหัดบทที่ 5" maxlength="80">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="dateInput">วันที่ต้องการให้เตือน</label>
+        <input id="dateInput" type="date">
+      </div>
+      <div class="field">
+        <label for="timeInput">เวลาที่ต้องการให้เตือน (เวลาไทย)</label>
+        <input id="timeInput" type="time">
+      </div>
+    </div>
+    <div class="form-footer">
+      <span class="form-hint" id="formHint"></span>
+      <button class="add-btn" type="submit">+ เพิ่มรายการ</button>
+    </div>
+  </form>
+
+  <ul class="task-list" id="taskList"></ul>
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <strong>ยังไม่มีรายการการบ้าน</strong>
+    เพิ่มงานแรกของคุณที่ฟอร์มด้านบน แล้วแอปจะเตือนให้เมื่อถึงเวลา
+  </div>
+</div>
+
+<div id="toast-wrap"></div>
+
+<script>
+(function(){
+  let tasks = [];
+  let nextId = 1;
+
+  const form = document.getElementById('addForm');
+  const subjectInput = document.getElementById('subjectInput');
+  const titleInput = document.getElementById('titleInput');
+  const dateInput = document.getElementById('dateInput');
+  const timeInput = document.getElementById('timeInput');
+  const formHint = document.getElementById('formHint');
+  const listEl = document.getElementById('taskList');
+  const emptyState = document.getElementById('emptyState');
+  const notifyBtn = document.getElementById('notifyBtn');
+  const notifyStatus = document.getElementById('notifyStatus');
+  const toastWrap = document.getElementById('toast-wrap');
+  const ntfyTopicInput = document.getElementById('ntfyTopicInput');
+  const ntfySaveBtn = document.getElementById('ntfySaveBtn');
+  const ntfyStatus = document.getElementById('ntfyStatus');
+
+  const NTFY_MAX_DELAY_SECONDS = 3 * 24 * 60 * 60; // public ntfy.sh caps scheduled delivery at 3 days ahead
+  let ntfyTopic = '';
+
+  function saveState(){
+    try {
+      const serializable = tasks.map(function(t){
+        return { id:t.id, subject:t.subject, title:t.title, due:t.due.toISOString(), done:t.done, notified:t.notified, ntfyScheduled:t.ntfyScheduled };
+      });
+      localStorage.setItem('hw_tasks', JSON.stringify(serializable));
+      localStorage.setItem('hw_ntfy_topic', ntfyTopic);
+      localStorage.setItem('hw_next_id', String(nextId));
+    } catch(e) { /* storage unavailable (e.g. private browsing) - state just won't persist */ }
+  }
+
+  function loadState(){
+    try {
+      const rawTasks = localStorage.getItem('hw_tasks');
+      if (rawTasks){
+        tasks = JSON.parse(rawTasks).map(function(t){
+          return Object.assign({}, t, { due: new Date(t.due) });
+        });
+      }
+      const rawNextId = localStorage.getItem('hw_next_id');
+      if (rawNextId) nextId = parseInt(rawNextId, 10) || nextId;
+      const rawTopic = localStorage.getItem('hw_ntfy_topic');
+      if (rawTopic){
+        ntfyTopic = rawTopic;
+        ntfyTopicInput.value = rawTopic;
+      }
+    } catch(e) { /* storage unavailable - start fresh */ }
+  }
+
+  function setNtfyStatus(msg, cls){
+    ntfyStatus.textContent = msg;
+    ntfyStatus.className = 'ntfy-status' + (cls ? ' ' + cls : '');
+  }
+
+  ntfySaveBtn.addEventListener('click', function(){
+    const val = ntfyTopicInput.value.trim();
+    if (!val){
+      setNtfyStatus('พิมพ์ชื่อหัวข้อก่อนกดบันทึก', 'warn');
+      return;
+    }
+    ntfyTopic = val;
+    setNtfyStatus('บันทึกหัวข้อ "' + val + '" แล้ว รายการที่เพิ่มจากนี้จะตั้งแจ้งเตือนผ่านมือถือให้อัตโนมัติ', 'ok');
+    saveState();
+    // Retry scheduling any task that was waiting for a topic
+    tasks.forEach(scheduleNtfyIfEligible);
+  });
+
+  function scheduleNtfyIfEligible(task){
+    if (task.done || task.ntfyScheduled || !ntfyTopic) return;
+    const delaySeconds = Math.floor((task.due.getTime() - Date.now()) / 1000);
+    if (delaySeconds <= 0 || delaySeconds > NTFY_MAX_DELAY_SECONDS) return;
+
+    task.ntfyScheduled = true; // mark optimistically to avoid duplicate sends on retry
+    fetch('https://ntfy.sh/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topic: ntfyTopic,
+        title: 'ถึงเวลาทำการบ้าน: ' + task.subject,
+        message: task.title,
+        delay: String(delaySeconds),
+        priority: 5,
+        tags: ['books']
+      })
+    }).then(function(res){
+      if (!res.ok){ task.ntfyScheduled = false; }
+      saveState();
+      render();
+    }).catch(function(){
+      task.ntfyScheduled = false;
+      saveState();
+      render();
+    });
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function updateNotifyUi(){
+    if (typeof Notification === 'undefined'){
+      notifyBtn.style.display = 'none';
+      notifyStatus.textContent = 'เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือนแบบระบบ แอปจะเตือนในหน้านี้แทน';
+      return;
+    }
+    if (Notification.permission === 'granted'){
+      notifyBtn.style.display = 'none';
+      notifyStatus.textContent = 'เปิดการแจ้งเตือนแล้ว';
+    } else if (Notification.permission === 'denied'){
+      notifyBtn.style.display = 'none';
+      notifyStatus.textContent = 'การแจ้งเตือนถูกปิดไว้ในเบราว์เซอร์ แอปจะเตือนในหน้านี้แทน';
+    } else {
+      notifyBtn.style.display = '';
+      notifyStatus.textContent = '';
+    }
+  }
+  notifyBtn.addEventListener('click', function(){
+    if (typeof Notification === 'undefined') return;
+    Notification.requestPermission().then(updateNotifyUi);
+  });
+  updateNotifyUi();
+
+  function showToast(task){
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.innerHTML = '<b>ถึงเวลาทำการบ้านแล้ว: ' + escapeHtml(task.subject) + '</b>' + escapeHtml(task.title);
+    toastWrap.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 7000);
+    t.addEventListener('click', function(){ t.remove(); });
+
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted'){
+      try {
+        new Notification('ถึงเวลาทำการบ้าน: ' + task.subject, { body: task.title });
+      } catch(e) { /* notification unavailable in this environment */ }
+    }
+  }
+
+  function formatDue(dt){
+    const opts = { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit', hour12:false, timeZone:'Asia/Bangkok' };
+    return dt.toLocaleString('th-TH', opts) + ' น.';
+  }
+
+  function countdownInfo(task){
+    if (task.done){
+      return { text: 'เสร็จแล้ว', cls: 'finished' };
+    }
+    const diff = task.due.getTime() - Date.now();
+    if (diff <= 0){
+      return { text: 'เลยเวลาที่ตั้งไว้แล้ว', cls: 'urgent' };
+    }
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(mins / 60);
+    const days = Math.floor(hours / 24);
+    let text, cls;
+    if (days >= 1){
+      text = days + ' วัน ' + (hours % 24) + ' ชม.';
+      cls = 'safe';
+    } else if (hours >= 1){
+      text = hours + ' ชม. ' + (mins % 60) + ' นาที';
+      cls = hours >= 3 ? 'safe' : 'soon';
+    } else {
+      text = mins + ' นาที';
+      cls = 'urgent';
+    }
+    return { text: text, cls: cls };
+  }
+
+  function ntfyLabel(task){
+    if (task.done) return '';
+    if (task.ntfyScheduled) return '📲 ตั้งเตือนผ่านมือถือแล้ว';
+    if (!ntfyTopic) return '⚠ ยังไม่ได้ตั้งหัวข้อ ntfy';
+    const delaySeconds = Math.floor((task.due.getTime() - Date.now()) / 1000);
+    if (delaySeconds > NTFY_MAX_DELAY_SECONDS) return 'จะตั้งเตือนอัตโนมัติเมื่อเหลือไม่เกิน 3 วัน';
+    return '';
+  }
+
+  function render(){
+    listEl.innerHTML = '';
+    if (tasks.length === 0){
+      emptyState.style.display = '';
+      return;
+    }
+    emptyState.style.display = 'none';
+
+    const sorted = tasks.slice().sort(function(a,b){ return a.due - b.due; });
+
+    sorted.forEach(function(task){
+      const li = document.createElement('li');
+      li.className = 'task-row' + (task.done ? ' done' : '');
+      li.dataset.id = task.id;
+
+      const cd = countdownInfo(task);
+
+      li.innerHTML =
+        '<button class="check" aria-label="ทำเสร็จแล้ว" data-action="toggle">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg>' +
+        '</button>' +
+        '<div class="task-main">' +
+          '<div class="task-line1">' +
+            '<span class="subject-badge">' + escapeHtml(task.subject) + '</span>' +
+            '<span class="task-title">' + escapeHtml(task.title) + '</span>' +
+          '</div>' +
+          '<div class="task-line2">' +
+            '<span class="due-text">แจ้งเตือนเวลา ' + formatDue(task.due) + '</span>' +
+            '<span class="countdown-badge ' + cd.cls + '">' + cd.text + '</span>' +
+            '<span class="due-text">' + ntfyLabel(task) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<button class="del" aria-label="ลบรายการ" data-action="delete">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>' +
+        '</button>';
+
+      listEl.appendChild(li);
+    });
+  }
+
+  listEl.addEventListener('click', function(e){
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const li = e.target.closest('li.task-row');
+    const id = Number(li.dataset.id);
+    const task = tasks.find(function(t){ return t.id === id; });
+    if (!task) return;
+
+    if (btn.dataset.action === 'toggle'){
+      task.done = !task.done;
+      saveState();
+      render();
+    } else if (btn.dataset.action === 'delete'){
+      tasks = tasks.filter(function(t){ return t.id !== id; });
+      saveState();
+      render();
+    }
+  });
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    const subject = subjectInput.value.trim();
+    const title = titleInput.value.trim();
+    const dateVal = dateInput.value;
+    const timeVal = timeInput.value;
+
+    if (!subject || !title || !dateVal || !timeVal){
+      formHint.textContent = 'กรอกข้อมูลให้ครบก่อนเพิ่มรายการ';
+      return;
+    }
+    const due = new Date(dateVal + 'T' + timeVal + ':00+07:00');
+    if (isNaN(due.getTime())){
+      formHint.textContent = 'วันที่หรือเวลาไม่ถูกต้อง';
+      return;
+    }
+
+    formHint.textContent = '';
+    const newTask = {
+      id: nextId++,
+      subject: subject,
+      title: title,
+      due: due,
+      done: false,
+      notified: false,
+      ntfyScheduled: false
+    };
+    tasks.push(newTask);
+    saveState();
+    scheduleNtfyIfEligible(newTask);
+
+    subjectInput.value = '';
+    titleInput.value = '';
+    dateInput.value = '';
+    timeInput.value = '';
+    subjectInput.focus();
+    render();
+  });
+
+  setInterval(function(){
+    tasks.forEach(function(task){
+      if (!task.done && !task.notified && task.due.getTime() <= Date.now()){
+        task.notified = true;
+        showToast(task);
+      }
+      scheduleNtfyIfEligible(task);
+    });
+    saveState();
+    render();
+  }, 15000);
+
+  loadState();
+  render();
+})();
+</script>
+</body>
+</html>
